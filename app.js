@@ -60,15 +60,21 @@ const states = [
   'WY',
 ]
 
-const URL = 'https://data.cdc.gov/resource/kn79-hsxy.json'
+const chartCache = {}
+
+const covid_data_url = 'https://data.cdc.gov/resource/kn79-hsxy.json'
 let CASE_DATA = ''
 
 const selector = document.getElementById( 'state-dropdown' )
 
-let covid_chart
+const chartConf = {
+  defineName: () => Date.now().toString(),
+  type: 'bar',
+  label: 'Covid Deaths',
+}
 
 states.forEach( ( ind ) => {
-  const option = document.createElement( 'OPTION' )
+  const option = document.createElement( 'option' )
   const optionText = document.createTextNode( `${ind}` )
   option.appendChild( optionText )
   selector.appendChild( option )
@@ -77,15 +83,43 @@ states.forEach( ( ind ) => {
 const button = document.getElementById( 'generate' )
 button.addEventListener( 'click', async () => {
   try {
-    const resData = await fetch( URL )
-    const data = await resData.json()
-    createChart( data )
+    const resData = await fetch( covid_data_url )
+    createChart( await resData.json() )
   } catch ( error ) {
     alert( error )
   }
 } )
 
-const createChart = ( data ) => {
+function randomRGBA() {
+  const x = Math.floor( Math.random() * 256 )
+  const y = Math.floor( Math.random() * 256 )
+  const z = Math.floor( Math.random() * 256 )
+  return 'rgba(' + x + ',' + y + ',' + z + ',' + 0.4 + ')'
+}
+
+function datasetBuilder( d ) {
+  return [
+    {
+      label: chartConf.label,
+      data: d.map( ( { covid_death } ) => covid_death ),
+      backgroundColor: d.forEach( randomRGBA ),
+      borderColor: 'black',
+      borderWidth: 1,
+    },
+  ]
+}
+
+const opts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  scales: {
+    y: {
+      beginAtZero: true,
+    }
+  },
+}
+
+function createChart( data ) {
   const spanDateAsOf = document.getElementById( 'weekOf' )
   let start_date = new Date( data[0].start_week ).toString().slice( 0, 15 )
   let end_date = new Date( data[0].end_week ).toString().slice( 0, 15 )
@@ -94,98 +128,31 @@ const createChart = ( data ) => {
   const selectedState = document.getElementById( 'state-dropdown' )
   const stateSelected = selectedState.options[selectedState.selectedIndex].text
 
-  let countiesInState = data.filter( ( state ) => {
-    if ( state.state_name === stateSelected ) {
-      return state
-    }
-  } )
+  let countiesInState = data.filter( ( state ) => state.state_name === stateSelected )
 
   if ( countiesInState.length < 1 ) {
     alert( 'No data to show for this state' )
     return
   } else {
-    if ( covid_chart ) {
-      covid_chart.destroy()
-      let ctx = document.getElementById( 'myChart' ).getContext( '2d' )
-      covid_chart = new Chart( ctx, {
-        type: 'bar',
-        data: {
-          labels: countiesInState.map( ( county ) => {
-            return county.county_name
-          } ),
-          datasets: [
-            {
-              label: '# of Deaths',
-              data: countiesInState.map( ( county ) => {
-                return county.covid_death
-              } ),
-              backgroundColor: countiesInState.map( ( val ) => {
-                var x = Math.floor( Math.random() * 256 )
-                var y = Math.floor( Math.random() * 256 )
-                var z = Math.floor( Math.random() * 256 )
-                var bgColor = 'rgba(' + x + ',' + y + ',' + z + ',' + 0.4 + ')'
-                return bgColor
-              } ),
-              borderColor: 'black',
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            yAxes: [
-              {
-                ticks: {
-                  beginAtZero: true,
-                },
-              },
-            ],
-          },
-        },
-      } )
-      covid_chart.update()
-    } else {
-      let ctx = document.getElementById( 'myChart' ).getContext( '2d' )
-      covid_chart = new Chart( ctx, {
-        type: 'bar',
-        data: {
-          labels: countiesInState.map( ( county ) => {
-            return county.county_name
-          } ),
-          datasets: [
-            {
-              label: '# of Deaths',
-              data: countiesInState.map( ( county ) => {
-                return county.covid_death
-              } ),
-              backgroundColor: countiesInState.map( ( val ) => {
-                var x = Math.floor( Math.random() * 256 )
-                var y = Math.floor( Math.random() * 256 )
-                var z = Math.floor( Math.random() * 256 )
-                var bgColor = 'rgba(' + x + ',' + y + ',' + z + ',' + 0.4 + ')'
-                return bgColor
-              } ),
-              borderColor: 'black',
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            yAxes: [
-              {
-                ticks: {
-                  beginAtZero: true,
-                },
-              },
-            ],
-          },
-        },
-      } )
-    }
+
+    const chartName = chartConf.defineName()
+
+    const chartContainer = document.getElementById( 'chart-container' )
+
+    const newCanvas = document.createElement( 'canvas' )
+    newCanvas.setAttribute( 'id', chartName )
+
+    chartContainer.appendChild( newCanvas )
+
+    let ctx = document.getElementById( chartName ).getContext( '2d' )
+
+    new Chart( ctx, {
+      type: chartConf.type,
+      data: {
+        labels: countiesInState.map( ( { county_name } ) => county_name ),
+        datasets: datasetBuilder( countiesInState ),
+      },
+      options: opts,
+    } )
   }
 }
