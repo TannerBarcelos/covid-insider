@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./index.css" />
+    <title>Covid Insider</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>COVID-19 Fatality Visualizer</h1>
+      <label for="state-dropdown"
+        >Select a state to see COVID-19 releated fatality rates</label
+      >
+
+      <select name="state-dropdown" id="state-dropdown"></select>
+
+      <button id="generate">Generate Chart</button>
+
+      <span id="weekOf"></span>
+
+      <canvas id="myChart"></canvas>
+    </div>
+    <script src="./app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+  </body>
+</html>
