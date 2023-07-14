@@ -127,10 +127,21 @@ document.getElementById( 'generate' ).addEventListener( 'click', async () => {
   try {
     const covidData = await fetch( SOURCE_DATA_URL )
     const chartData = await covidData.json()
-    // Build 3 charts
-    for ( let i = 0; i < 3; i++ ) {
-      buildCharts( chartData )
+
+    // Get the selected state from the dropdown menu using the selected index
+    const stateDropdown = document.getElementById( htmlIdSelectorLkp.domSelectors.dropdowns.states )
+    const stateSelected = stateDropdown.options[stateDropdown.selectedIndex].text
+
+    let countiesInState = chartData.filter( ( state ) => state.state_name === stateSelected )
+    if ( countiesInState.length < 1 ) {
+      alert( 'No data to show for this state' )
+      return
+    } else {
+      for ( let i = 0; i < 3; i++ ) {
+        buildCharts( chartData, countiesInState )
+      }
     }
+
   } catch ( error ) {
     alert( error )
   }
@@ -155,6 +166,7 @@ function dataBuilder( chartData, chartType ) {
       backgroundColor: chartData.map( generateRGBA ),
       borderColor: 'lightgrey',
       borderWidth: 0.5,
+      fill: true,
     },
   ]
 }
@@ -189,11 +201,29 @@ function buildChart( ctx, countiesInState, chartType, canvasIdUnique ) {
   const opts = {
     responsive: true,
     maintainAspectRatio: false,
-    scales: {
-      y: {
-        beginAtZero: true,
+    plugins: {
+      legend: {
+        display: true,
       }
-    },
+    }
+  }
+
+  if ( chartType !== CHART_TYPES.PIE ) {
+    opts.scales = {
+      yAxes: [
+        {
+          ticks: {
+            beginAtZero: true,
+          },
+        },
+      ],
+    }
+  }
+
+  if ( chartType === CHART_TYPES.PIE ) {
+    opts.plugins.legend = {
+      display: false
+    }
   }
 
   const chart = new Chart( ctx, {
@@ -212,36 +242,21 @@ function buildChart( ctx, countiesInState, chartType, canvasIdUnique ) {
   }
 }
 
-function buildCharts( data ) {
+function buildCharts( data, counties ) {
 
   dateSpanTextContentCreator( data )
 
-  // Get the selected state from the dropdown menu using the selected index
-  const stateDropdown = document.getElementById( htmlIdSelectorLkp.domSelectors.dropdowns.states )
-  const stateSelected = stateDropdown.options[stateDropdown.selectedIndex].text
+  if ( Object.keys( chartCache ).length ) removeExistingCharts()
 
-  let countiesInState = data.filter( ( state ) => state.state_name === stateSelected )
-
-  if ( countiesInState.length < 1 ) {
-    alert( 'No data to show for this state' )
-    return
-  } else {
-
-    // Remove any existing canvas
-    if ( Object.keys( chartCache ).length ) {
-      removeExistingCharts()
-    }
-
-    for ( let i = 0; i < 3; i++ ) {
-      const chartType = Object.values( CHART_TYPES )[i]
-      const canvasIdUnique = chartConf[chartType].defineUniqueChartName()
-      const generatedCanvas = getCanvas()
-      generatedCanvas.setAttribute( 'id', canvasIdUnique )
-      const selectedChart = Object.values( htmlIdSelectorLkp.chartSelectors )[i]
-      const chartContainer = document.getElementById( selectedChart )
-      chartContainer.appendChild( generatedCanvas )
-      let ctx = document.getElementById( canvasIdUnique ).getContext( '2d' )
-      buildChart( ctx, countiesInState, chartType, canvasIdUnique )
-    }
+  for ( let i = 0; i < 3; i++ ) {
+    const chartType = Object.values( CHART_TYPES )[i]
+    const canvasIdUnique = chartConf[chartType].defineUniqueChartName()
+    const generatedCanvas = getCanvas()
+    generatedCanvas.setAttribute( 'id', canvasIdUnique )
+    const selectedChart = Object.values( htmlIdSelectorLkp.chartSelectors )[i]
+    const chartContainer = document.getElementById( selectedChart )
+    chartContainer.appendChild( generatedCanvas )
+    let ctx = document.getElementById( canvasIdUnique ).getContext( '2d' )
+    buildChart( ctx, counties, chartType, canvasIdUnique )
   }
 }
