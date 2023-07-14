@@ -15,11 +15,15 @@
 
       <select name="state-dropdown" id="state-dropdown"></select>
 
-      <button id="generate">Generate Chart</button>
+      <button id="generate">Generate Charts</button>
 
       <span id="weekOf"></span>
 
-      <div id="chart-container"></div>
+      <div class="chart-container">
+        <div id="bar-chart-container"></div>
+        <div id="pie-chart-container"></div>
+        <div id="line-chart-container"></div>
+      </div>
     </div>
     <script src="./app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
