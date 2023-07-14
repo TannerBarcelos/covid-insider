@@ -6,4 +6,4 @@ Visualize **COVID-19** infection rates by state
 
 ![img](readmeimg.png)
 
-> Recently refactored due to data loss. This was my first ever web-dev project in college which sprouted my passion for the web and data visualization. This application does not serve as something to impress, but to inform and look back on growth.
+**This project is developed in VanillaJS, HTML, and CSS on purpose. It was my first project in college but I also wanted to test ChartJS performance in a raw, non SPA environment**
